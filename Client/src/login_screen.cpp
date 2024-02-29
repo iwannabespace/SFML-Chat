@@ -4,12 +4,12 @@
 #include <iostream>
 
 LoginScreen::LoginScreen(const sf::RenderWindow& window, Client& client, sf::Font& font)
-    : client(client), 
-      usernameTextbox("username", { 200, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 15),
+    : usernameTextbox("username", { 200, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 15),
       rTextbox("R", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
       gTextbox("G", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
       bTextbox("B", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
-      button({ 70, 30 }, { 30, 200 }, Theme::Primary, sf::Color::White, Theme::Text, "Connect", font)
+      button({ 70, 30 }, { 30, 200 }, Theme::Primary, sf::Color::White, Theme::Text, "Connect", font),
+      client(client)
 {
     float winw = window.getSize().x;
     float winh = window.getSize().y;
@@ -102,9 +102,7 @@ void LoginScreen::on_event_click_items(const sf::RenderWindow& window)
 {
     button.on_click(window, [this]() {
         std::string username = this->usernameTextbox.value();
-        size_t usernameLength = username.length();
-        sf::Color color = Functions::getColorFromTextbox(rTextbox.value(), gTextbox.value(), bTextbox.value());
-
+        sf::Color color = Functions::GetColorFromTextbox(rTextbox.value(), gTextbox.value(), bTextbox.value());
         this->client.join(username, color);
     });   
 }   
@@ -116,7 +114,7 @@ void LoginScreen::on_text_entered(uint32_t character)
     gTextbox.on_input(character);
     bTextbox.on_input(character);
 
-    colorPreviewBox.setFillColor(Functions::getColorFromTextbox(rTextbox.value(), gTextbox.value(), bTextbox.value()));
+    colorPreviewBox.setFillColor(Functions::GetColorFromTextbox(rTextbox.value(), gTextbox.value(), bTextbox.value()));
 }
 
 void LoginScreen::on_key_pressed(sf::Keyboard::Key key)

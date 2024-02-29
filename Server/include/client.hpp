@@ -9,8 +9,9 @@ struct Client
 {
     std::string username;
     sf::TcpSocket* socket;
-    std::uint64_t id;
+    sf::Uint64 id;
     sf::Color color;
+    bool joined = false;
 };
 
 #endif

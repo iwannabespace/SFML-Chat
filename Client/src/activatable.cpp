@@ -1,5 +1,6 @@
 #include "../include/activatable.hpp"
 #include "../include/functions.hpp"
+#include <iostream>
 
 Activatable::Activatable(sf::Vector2f size, sf::Vector2f position, sf::Color color, sf::Color borderColor, sf::Color iconColor, const std::string& iconFile)
     : outlineColor(borderColor)
@@ -8,22 +9,24 @@ Activatable::Activatable(sf::Vector2f size, sf::Vector2f position, sf::Color col
     body.setPosition(position);
     body.setFillColor(color);
     body.setOutlineColor(sf::Color::Transparent);
-    body.setOutlineThickness(1);
+    body.setOutlineThickness(2);
     body.setRadius(6);
 
     iconTexture.loadFromFile(iconFile);
     icon.setTexture(iconTexture);
 
-    float scaleX = size.x + 10 / icon.getLocalBounds().width;
-    float scaleY = size.y + 10 / icon.getLocalBounds().height;
-    icon.setScale(scaleX, scaleY);
+    // float scaleX = size.x / icon.getLocalBounds().width; 
+    // float scaleY = size.y / icon.getLocalBounds().height;
+    // icon.setScale(scaleX, scaleY);
 
     icon.setPosition({ 
         Functions::GetMiddle(icon.getGlobalBounds().width, size.x, position.x, 0),
         Functions::GetMiddle(icon.getGlobalBounds().height, size.y, position.y, 0),
     });
 
-    icon.setColor(iconColor);
+    iconColor;
+
+    //icon.setColor(iconColor);
 }
 
 Activatable::~Activatable()
@@ -32,22 +35,46 @@ Activatable::~Activatable()
 
 void Activatable::on_hover(const sf::RenderWindow& window)
 {
-    if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
-        body.setOutlineColor(outlineColor);
-    
-    else
-        body.setOutlineColor(sf::Color::Transparent);
+    if (!_activated)
+    {
+        if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
+            body.setOutlineColor(outlineColor);
+        
+        else
+            body.setOutlineColor(sf::Color::Transparent);
+    }
 }
 
-void Activatable::on_click(const sf::RenderWindow& window, std::function<void()> callback)
+void Activatable::on_event_click(const sf::RenderWindow& window)
 {
     if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
     {    
         _activated = !_activated;
+        clickCount++;
+
+        callbackCalled = false;
 
         if (_activated)
-            callback();
+            body.setOutlineColor(outlineColor);
+        
+        else
+            body.setOutlineColor(sf::Color::Transparent);
     }
+}
+
+void Activatable::on_active()
+{
+    if (callbackSet && _activated && !callbackCalled)
+    {    
+        callback();
+        callbackCalled = true;
+    }
+}
+
+void Activatable::setCallback(const std::function<void()>& _callback)
+{
+    this->callback = _callback;
+    callbackSet = true;
 }
 
 void Activatable::setPosition(sf::Vector2f position)
@@ -71,6 +98,16 @@ void Activatable::setSize(sf::Vector2f size)
 bool Activatable::activated() const
 {
     return _activated;
+}
+
+bool Activatable::deactivated()
+{
+    bool result = (clickCount && clickCount % 2 == 0);
+
+    if (result)
+        clickCount = 0;
+
+    return result;
 }
 
 sf::Vector2f Activatable::getPosition() const

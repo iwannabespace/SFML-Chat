@@ -2,7 +2,7 @@
 
 int main()
 {
-    Server server(3000);
+    Server server(9472);
 
     server.run();
 

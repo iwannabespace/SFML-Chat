@@ -12,18 +12,18 @@ class Server
         ~Server();
         bool listen();
         void run();
-        void sendOnly(std::uint64_t id, sf::Packet& packet);
-        void sendExcept(std::uint64_t id, sf::Packet& packet);
-        void sendClientId(std::uint64_t id);
-        void sendAllNewClient(std::uint64_t id);
-        void sendOtherClientInfos(std::uint64_t id);
+        void sendOnly(sf::Uint64 id, sf::Packet& packet);
+        void sendExcept(sf::Uint64 id, sf::Packet& packet);
+        void sendClientId(sf::Uint64 id);
+        void sendAllNewClient(sf::Uint64 id);
+        void sendOtherClientInfos(sf::Uint64 id);
     private:
         unsigned short port;
         sf::TcpListener listener;
         sf::SocketSelector selector;
-        std::unordered_map<std::uint64_t, Client> clients;
+        std::unordered_map<sf::Uint64, Client> clients;
+        sf::Uint64 joinedCount = 0;
         size_t received;
-        std::uint64_t joinedCount = 0;
 };
 
 #endif

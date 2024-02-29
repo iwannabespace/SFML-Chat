@@ -7,7 +7,7 @@ Textbox::Textbox(const sf::String& placeholder, sf::Vector2f size, sf::Vector2f 
         sf::Color hovered_color, sf::Color focused_color, sf::Color text_color, sf::Color placeholder_color, 
         sf::Font& font, float border_width, std::optional<size_t> maxCharacter, const std::string& def, bool numberOnly)
     : placeholder_str(placeholder), font(font), color(color), hovered_color(hovered_color), focused_color(focused_color), 
-        cursor_index(0), focused(false), selected(false), maxCharacter(maxCharacter), numberOnly(numberOnly)
+        cursor_index(0), maxCharacter(maxCharacter), focused(false), selected(false), numberOnly(numberOnly)
 {
     if (!renderer.create(size.x, size.y))
         std::cerr << "Renderer couldn'be created!" << std::endl;
@@ -62,10 +62,10 @@ void Textbox::on_input(uint32_t character)
         bool added = false;
         bool deleted = false;
 
-        if (isprint(character) || character > 127)
+        if (std::isprint(character) || character > 127)
         {    
-            if ((maxCharacter.has_value() && string.getSize() - 1 < maxCharacter.value() || !maxCharacter.has_value()) &&
-                (numberOnly && isnumber(character) || !numberOnly))
+            if (((maxCharacter.has_value() && string.getSize() - 1 < maxCharacter.value()) || (!maxCharacter.has_value())) &&
+                ((numberOnly && std::isdigit(character)) || !(numberOnly)))
             {    
                 string.insert(cursor_index, character);
         
@@ -323,6 +323,14 @@ void Textbox::setSize(sf::Vector2f size)
     text.setPosition(text_pos);
 }
 
+void Textbox::clear()
+{
+    string = "_";
+    text.setString(string);
+    text.setPosition(text_pos);
+    cursor_index = 0;
+}
+
 sf::Vector2f Textbox::getPosition() const
 {
     return container.getPosition();
@@ -341,6 +349,11 @@ std::string Textbox::value() const
 
     return copy;
 }   
+
+bool Textbox::active() const
+{
+    return focused;
+}
 
 bool Textbox::is_number(const std::string& str) const
 {

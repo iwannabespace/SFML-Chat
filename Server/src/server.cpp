@@ -1,9 +1,11 @@
 #include "../include/server.hpp"
+#include "../../Shared/shared.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
 #include <thread>
+#include <SFML/Graphics.hpp>
 
 Server::Server(unsigned short port)
     : port(port)
@@ -24,7 +26,7 @@ bool Server::listen()
 
 void Server::run()
 {
-    std::uint64_t id = 0;
+    sf::Uint64 id = 0;
 
     if (this->listen())
     {
@@ -51,12 +53,13 @@ void Server::run()
                 
                 else
                 {
-                    for (auto it = clients.begin(), next_it = it; it != clients.end(); it = next_it)
+                    for (auto it = clients.begin(); it != clients.end();)
                     {
                         auto& client = it->second;
                         auto clientSocket = client.socket;
                         auto clientId = client.id;
                         auto clientUsername = client.username;
+                        bool removed = false;
 
                         if (selector.isReady(*clientSocket))
                         {
@@ -67,26 +70,35 @@ void Server::run()
 
                             if (status == sf::Socket::Done)
                             {
-                                std::string descriptor;
+                                uint8_t descriptor;
                                 recvPacket >> descriptor;
 
-                                if (descriptor == "SET-USERNAME")
+                                if (descriptor == Shared::SET_USERNAME)
                                 {
-                                    if (clientUsername.empty())
-                                    {
-                                        std::string username;
-                                        sf::Color color;
+                                    std::string username;
+                                    sf::Color color;
 
-                                        recvPacket >> username >> color.r >> color.g >> color.b;
-                                        client.username = username;
-                                        client.color = color;
+                                    recvPacket >> username >> color.r >> color.g >> color.b;
+                                    client.username = username;
+                                    client.color = color;
+                                    client.joined = true;
+                                    joinedCount++;
 
-                                        joinedCount++;
+                                    sendClientId(clientId);
+                                    sendAllNewClient(clientId);
+                                    sendOtherClientInfos(clientId);
+                                }
 
-                                        sendClientId(clientId);
-                                        sendAllNewClient(clientId);
-                                        sendOtherClientInfos(clientId);
-                                    }
+                                else if (descriptor == Shared::MESSAGE)
+                                {
+                                    sf::Uint64 incId;
+                                    sf::Uint8 type;
+                                    std::string data;
+                                    std::string extension;
+                                    
+                                    recvPacket >> incId >> type >> data >> extension;
+                                    sendPacket << Shared::MESSAGE << incId << type << data << extension;
+                                    sendExcept(clientId, sendPacket);
                                 }
                             }
 
@@ -94,11 +106,14 @@ void Server::run()
                             {
                                 selector.remove(*clientSocket);
                                 delete clientSocket;
-                                clients.erase(it);
+                                it = clients.erase(it);
+                                joinedCount--;
+                                removed = true;
                             }
                         }
 
-                        ++next_it;
+                        if (!removed)
+                            ++it;
                     }
                 }
             }
@@ -106,49 +121,51 @@ void Server::run()
     }
 }
 
-void Server::sendOnly(std::uint64_t id, sf::Packet& packet)
+void Server::sendOnly(sf::Uint64 id, sf::Packet& packet)
 {
-    clients[id].socket->send(packet);
+    auto& client = clients[id];
+
+    if (client.joined)
+        client.socket->send(packet);
 }
 
-void Server::sendExcept(std::uint64_t id, sf::Packet& packet)
+void Server::sendExcept(sf::Uint64 id, sf::Packet& packet)
 {
-    for (auto [clientId, client] : clients)
-        if (clientId != id)
-            client.socket->send(packet);
+    if (joinedCount > 1)
+        for (auto [clientId, client] : clients)
+            if (clientId != id && client.joined)
+                client.socket->send(packet);
 }
 
-void Server::sendClientId(std::uint64_t id)
+void Server::sendClientId(sf::Uint64 id)
 {
     sf::Packet packet;
 
-    packet << "ID" << id;
+    packet << Shared::ID << id;
 
     sendOnly(id, packet); 
 }
 
-void Server::sendAllNewClient(std::uint64_t id)
+void Server::sendAllNewClient(sf::Uint64 id)
 {
     sf::Packet packet;
 
     auto client = clients[id];
-
-    packet << "NEW-CLIENT" << id << client.username << 
-        client.color.r << client.color.g << client.color.b;
+    packet << Shared::NEW_CLIENT << id << client.username << client.color.r << client.color.g << client.color.b;
     
     sendExcept(id, packet);
 }
 
-void Server::sendOtherClientInfos(std::uint64_t id)
+void Server::sendOtherClientInfos(sf::Uint64 id)
 {
     if (joinedCount > 1)
     {
         sf::Packet packet;
         
-        packet << "OTHER-CLIENTS" << joinedCount - 1;
+        packet << Shared::OTHER_CLIENTS << joinedCount - 1;
 
         for (auto [clientId, client] : clients)
-            if (clientId != id && !client.username.empty())
+            if (clientId != id && client.joined)
                 packet << clientId << client.username
                     << client.color.r << client.color.g << client.color.b;
 

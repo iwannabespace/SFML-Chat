@@ -7,7 +7,7 @@
 struct Joiner
 {
     std::string username;
-    std::uint64_t id;
+    uint64_t id;
     sf::Color color;
 };
 

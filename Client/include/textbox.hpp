@@ -20,9 +20,11 @@ class Textbox : public sf::Drawable
         void draw_rt();
         void setPosition(sf::Vector2f position);
         void setSize(sf::Vector2f size);
+        void clear();
         sf::Vector2f getPosition() const;
         sf::Vector2f getSize() const;
         std::string value() const;
+        bool active() const;
     private:
         void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
         bool is_number(const std::string& str) const;
