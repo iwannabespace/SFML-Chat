@@ -22,9 +22,11 @@ class Options : public sf::Drawable
         void setFillColor(sf::Color color);
         void setTextColor(sf::Color color);
         void setHoverColor(sf::Color color);
+        void setFont(sf::Font& _font);
         void place();
         sf::Vector2f getSize() const;
         sf::Vector2f getPosition() const;
+        sf::FloatRect getGlobalBounds() const;
     private:
         void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     private:

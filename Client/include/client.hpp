@@ -13,6 +13,7 @@ class Client
     public:
         using OnJoinerJoinedCallback = std::function<void(const Joiner& joiner)>;
         using OnMessageReceivedCallback = std::function<void(const Message& message)>;
+        using OnJoinerRemovedCallback = std::function<void(const Joiner& joiner)>;
     public:
         Client(const sf::IpAddress& host, unsigned short port);
         ~Client();
@@ -26,6 +27,7 @@ class Client
         void setId(std::uint64_t _id);
         void newJoiner(const Joiner& joiner);
         void newMessage(const Message& message);
+        void removeJoiner(uint64_t _id);
         const std::unordered_map<uint64_t, Joiner>& getJoiners() const;
         const std::string& getUsername() const;
         uint64_t getId() const;
@@ -33,6 +35,7 @@ class Client
         bool isMe(uint64_t _id) const;
         void setOnJoinerJoinedCallback(const OnJoinerJoinedCallback& _callback);
         void setOnMessageReceivedCallback(const OnMessageReceivedCallback& _callback);
+        void setOnJoinerRemovedCallback(const OnJoinerRemovedCallback& _callback);
     private:
         sf::TcpSocket socket;
         sf::IpAddress host;
@@ -45,6 +48,7 @@ class Client
         std::unordered_map<uint64_t, Joiner> joiners;
         OnJoinerJoinedCallback joinerCallback;
         OnMessageReceivedCallback messageCallback;
+        OnJoinerRemovedCallback joinerRemovedCallback;
 };
 
 #endif

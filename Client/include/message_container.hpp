@@ -15,6 +15,8 @@ class MessageContainer : public sf::Drawable
         ~MessageContainer();
         void on_hover_objects(const sf::RenderWindow& window);
         void on_click_objects(const sf::RenderWindow& window);
+        void on_right_click_objects(const sf::RenderWindow& window);
+        void on_window_resize(const sf::RenderWindow& window);
         void updatePlayer();
         void setSize();
         void setPosition(sf::Vector2f position);

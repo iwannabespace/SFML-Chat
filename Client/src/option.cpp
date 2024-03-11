@@ -1,5 +1,6 @@
 #include "../include/option.hpp"
 #include "../include/functions.hpp"
+#include <iostream>
 
 Option::Option(sf::Font& font)
 {

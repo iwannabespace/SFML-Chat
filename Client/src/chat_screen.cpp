@@ -59,13 +59,13 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
         sf::Vector2f pos = { 5, 5 };
 
         if (!this->onlines.empty()) {
-            sf::Text last = this->onlines.back();
+            sf::Text last = this->onlines.back().second;
             pos.y = last.getPosition().y + last.getGlobalBounds().height + 20;
         }
 
         text.setPosition(pos);
         text.setFillColor(joiner.color);
-        this->onlines.emplace_back(text);
+        this->onlines.emplace_back(joiner.id, text);
     });
     
     client.setOnMessageReceivedCallback([this, &font](const Message& message) {
@@ -97,6 +97,22 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
         if (diff > 0) {
             for (auto& msg : this->messages)
                 msg.move({ 0, -(diff + 10) });
+        }
+    });
+
+    client.setOnJoinerRemovedCallback([this](const Joiner& joiner) {
+        this->onlines.erase(std::remove_if(
+            this->onlines.begin(), 
+            this->onlines.end(),
+            [&joiner](const std::pair<uint64_t, sf::Text>& online) { return online.first == joiner.id; }),
+            this->onlines.end()
+        );
+
+        sf::Vector2f pos = { 5, 5 };
+
+        for (auto& [id, online] : this->onlines) {
+            online.setPosition(pos);
+            pos.y += 20;
         }
     });
 
@@ -147,6 +163,7 @@ void ChatScreen::on_window_resize(const sf::RenderWindow& window)
         } else {
             message.setPosition({ messageDrawContainer.getSize().x - 250 - 10, message.getPosition().y });
         }
+        message.on_window_resize(window);
     }
 }
 
@@ -164,6 +181,12 @@ void ChatScreen::on_hover_items(const sf::RenderWindow& window)
 void ChatScreen::on_click_items(const sf::RenderWindow& window)
 {
     inputBox.on_click(window);
+}
+
+void ChatScreen::on_right_click_items(const sf::RenderWindow& window)
+{
+    for (auto& message : messages)
+        message.on_right_click_objects(window);
 }
 
 void ChatScreen::on_event_click_items(const sf::RenderWindow& window)
@@ -238,11 +261,11 @@ void ChatScreen::on_key_pressed(sf::Keyboard::Key key)
 
 void ChatScreen::on_scrolled(float delta, const sf::RenderWindow& window)
 {
-    if ((delta < 0 && (onlines.back().getPosition().y + onlines.back().getGlobalBounds().height > onlinesBar.getSize().y)) || 
-        (delta > 0 && (onlines.front().getPosition().y < 5 )))
+    if ((delta < 0 && (onlines.back().second.getPosition().y + onlines.back().second.getGlobalBounds().height > onlinesBar.getSize().y)) || 
+        (delta > 0 && (onlines.front().second.getPosition().y < 5 )))
     {    
         if (onlinesBar.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
-            for (auto& online : onlines)
+            for (auto& [id, online] : onlines)
                 online.move({ 0, std::round(delta) });
     }
     
@@ -297,7 +320,7 @@ void ChatScreen::draw_rt_items()
 
     onlinesBarRT.clear(Theme::Secondary);
     
-    for (const auto& online : onlines)
+    for (const auto& [id, online] : onlines)
         onlinesBarRT.draw(online);
     
     onlinesBarRT.display();

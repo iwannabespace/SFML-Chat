@@ -13,7 +13,7 @@ MessageContainer::MessageContainer(const Message& message, sf::Font& font)
         Functions::AddNewLinesToText(text.value(), 240);
     } else {
         if (message.type == MessageType::File) {
-            image = ImageViewer(message.data);
+            image = ImageViewer(message.data, font);
             image.value().setOutlineThickness(2);
         } else {
             sound = SoundPlayer(message.data, font);
@@ -36,7 +36,7 @@ MessageContainer::MessageContainer(const MessageContainer& rhs)
         Functions::AddNewLinesToText(text.value(), 240);
     } else {
         if (messageType == MessageType::File) {
-            image = ImageViewer(rhs.image.value().getFilename());
+            image = ImageViewer(rhs.image.value().getFilename(), font);
             image.value().setOutlineThickness(2);
         } else {
             sound = SoundPlayer(rhs.sound.value().getFilename(), font);
@@ -68,6 +68,7 @@ void MessageContainer::on_hover_objects(const sf::RenderWindow& window)
 {
     if (messageType == MessageType::File) {
         image.value().on_hover(window);
+        image.value().on_hover_items(window);
     } else if (messageType == MessageType::Sound) {
         sound.value().on_hover(window);
     }   
@@ -77,9 +78,23 @@ void MessageContainer::on_click_objects(const sf::RenderWindow& window)
 {
     if (messageType == MessageType::File) {
         image.value().on_click(window);
+        image.value().on_event_click_items(window);
     } else if (messageType == MessageType::Sound) {
         sound.value().on_click(window);
     }   
+}
+
+void MessageContainer::on_right_click_objects(const sf::RenderWindow& window)
+{
+    if (messageType == MessageType::File) {
+        image.value().on_right_click(window);
+    }
+}
+
+void MessageContainer::on_window_resize(const sf::RenderWindow& window)
+{
+    if (messageType == MessageType::File)
+        image.value().on_window_resize(window);
 }
 
 void MessageContainer::updatePlayer()

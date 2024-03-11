@@ -57,6 +57,11 @@ void Options::setHoverColor(sf::Color color)
     hoverColor = color;
 }
 
+void Options::setFont(sf::Font& _font)
+{
+    font = _font;
+}
+
 void Options::place()
 {
     sf::Vector2f size, position;
@@ -91,6 +96,11 @@ sf::Vector2f Options::getSize() const
 sf::Vector2f Options::getPosition() const
 {
     return container.getPosition();
+}
+
+sf::FloatRect Options::getGlobalBounds() const
+{
+    return container.getGlobalBounds();
 }
 
 void Options::draw(sf::RenderTarget& target, sf::RenderStates states) const

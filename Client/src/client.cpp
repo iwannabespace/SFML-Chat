@@ -93,16 +93,21 @@ void Client::newJoiner(const Joiner& joiner)
 
     if (joinerCallback) 
         joinerCallback(joiner);
-    
-    else {
-        std::cout << "For joiner: " << joiner.username << " callback is not yet set!" << std::endl;
-    }
 }
 
 void Client::newMessage(const Message& message)
 {
     if (messageCallback)
         messageCallback(message);
+}
+
+void Client::removeJoiner(uint64_t _id)
+{
+    Joiner joiner = joiners[_id];
+    joiners.erase(_id);
+
+    if (joinerRemovedCallback)
+        joinerRemovedCallback(joiner);
 }
 
 const std::unordered_map<uint64_t, Joiner>& Client::getJoiners() const
@@ -138,4 +143,9 @@ void Client::setOnJoinerJoinedCallback(const OnJoinerJoinedCallback& _callback)
 void Client::setOnMessageReceivedCallback(const OnMessageReceivedCallback& _callback)
 {
     messageCallback = _callback;
+}
+
+void Client::setOnJoinerRemovedCallback(const OnJoinerRemovedCallback& _callback)
+{
+    joinerRemovedCallback = _callback;
 }

@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <vector>
+#include <utility>
 #include "textbox.hpp"
 #include "button.hpp"
 #include "client.hpp"
@@ -18,6 +19,7 @@ class ChatScreen : public sf::Drawable
         void on_window_resize(const sf::RenderWindow& window);
         void on_hover_items(const sf::RenderWindow& window);
         void on_click_items(const sf::RenderWindow& window);
+        void on_right_click_items(const sf::RenderWindow& window);
         void on_event_click_items(const sf::RenderWindow& window);
         void on_text_entered(uint32_t character);
         void on_key_pressed(sf::Keyboard::Key key);
@@ -41,7 +43,7 @@ class ChatScreen : public sf::Drawable
         Activatable soundRecorderButton;
         sf::SoundBufferRecorder soundRecorder;
         Client& client;
-        std::vector<sf::Text> onlines;
+        std::vector<std::pair<uint64_t, sf::Text>> onlines;
         std::vector<MessageContainer> messages;
 };
 

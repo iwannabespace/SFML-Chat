@@ -39,7 +39,7 @@ App::~App()
 
 bool App::run()
 {
-    Client client("138.2.137.174", 9472);
+    Client client("127.0.0.1", 9472);
 
     if (client.connect())
     {
@@ -86,7 +86,12 @@ bool App::run()
                         if (!client.joined())
                             loginScreen->on_event_click_items(*window);
                         else
-                            chatScreen->on_event_click_items(*window);
+                        {
+                            if (event.mouseButton.button == sf::Mouse::Left)
+                                chatScreen->on_event_click_items(*window);
+                            else
+                                chatScreen->on_right_click_items(*window);
+                        }
                         break;
                     case sf::Event::MouseWheelScrolled:
                         if (client.joined())
@@ -228,6 +233,13 @@ void App::receiver(Client& client)
                 message.joiner = client.getJoiners().at(id);
 
                 client.newMessage(message);
+            }
+
+            else if (descriptor == Shared::CLIENT_REMOVE)
+            {
+                uint64_t id;
+                packet >> id;
+                client.removeJoiner(id);
             }
         }
     }

@@ -104,6 +104,9 @@ void Server::run()
 
                             else if (status == sf::Socket::Disconnected)
                             {
+                                if (client.joined) 
+                                    sendClientRemoved(clientId);
+
                                 selector.remove(*clientSocket);
                                 delete clientSocket;
                                 it = clients.erase(it);
@@ -144,6 +147,15 @@ void Server::sendClientId(sf::Uint64 id)
     packet << Shared::ID << id;
 
     sendOnly(id, packet); 
+}
+
+void Server::sendClientRemoved(sf::Uint64 id)
+{
+    sf::Packet packet;
+
+    packet << Shared::CLIENT_REMOVE << id;
+
+    sendExcept(id, packet); 
 }
 
 void Server::sendAllNewClient(sf::Uint64 id)

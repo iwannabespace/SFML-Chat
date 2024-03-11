@@ -13,6 +13,7 @@ namespace Shared
     const sf::Uint8 FILE = 5;
     const sf::Uint8 SOUND = 6;
     const sf::Uint8 TEXT = 7;
+    const sf::Uint8 CLIENT_REMOVE = 8;
 }
 
 #endif

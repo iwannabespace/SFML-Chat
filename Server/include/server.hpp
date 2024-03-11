@@ -14,6 +14,7 @@ class Server
         void run();
         void sendOnly(sf::Uint64 id, sf::Packet& packet);
         void sendExcept(sf::Uint64 id, sf::Packet& packet);
+        void sendClientRemoved(sf::Uint64 id);
         void sendClientId(sf::Uint64 id);
         void sendAllNewClient(sf::Uint64 id);
         void sendOtherClientInfos(sf::Uint64 id);
