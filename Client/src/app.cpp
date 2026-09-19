@@ -1,36 +1,31 @@
+#include <filesystem>
 #include <iostream>
 #include <thread>
 #include <unordered_map>
-#include <fstream>
-#include <sstream>
 #include "../include/app.hpp"
 #include "../include/client.hpp"
 #include "../include/joiner.hpp"
-#include "../include/button.hpp"
 #include "../include/font_manager.hpp"
 #include "../include/theme.hpp"
 #include "../include/login_screen.hpp"
 #include "../include/chat_screen.hpp"
-#include "../include/activatable.hpp"
-#include "../include/image_viewer.hpp"
-#include "../include/option.hpp"
-#include "../include/options.hpp"
-#include "../include/sound_player.hpp"
-#include "../include/message_container.hpp"
 #include "../include/functions.hpp"
 #include "../../Shared/shared.hpp"
 
 App::App()
 {
-    settings.antialiasingLevel = 8;
-    
-    window = std::make_unique<sf::RenderWindow>(sf::VideoMode::getDesktopMode(), "Chat", sf::Style::Default, settings);
+    settings.antiAliasingLevel = 8;
+
+    window = std::make_unique<sf::RenderWindow>(
+        sf::VideoMode::getDesktopMode(), "Chat", sf::Style::Default, sf::State::Windowed, settings);
     window->setVerticalSyncEnabled(true);
 
     sf::Vector2f win_size = { static_cast<float>(window->getSize().x), static_cast<float>(window->getSize().y) };
 
-    view.setSize(win_size.x, win_size.y);
+    view.setSize(win_size);
     view.setCenter({ win_size.x / 2, win_size.y / 2 });
+
+    std::filesystem::create_directory("files");
 }
 
 App::~App()
@@ -39,12 +34,12 @@ App::~App()
 
 bool App::run()
 {
-    Client client("127.0.0.1", 9472);
+    Client client(sf::IpAddress(127, 0, 0, 1), 9472);
 
     if (client.connect())
     {
         auto manager = FontManager();
-        manager.load("fonts/UbuntuMono-Regular.ttf", "monospace");
+        manager.load("assets/fonts/UbuntuMono-Regular.ttf", "monospace");
 
         sf::Font& monospaceFont = *manager.get("monospace").value();
 
@@ -57,63 +52,54 @@ bool App::run()
 
         while (window->isOpen() && client.connected())
         {
-            sf::Event event;
-
-            while (window->pollEvent(event))
+            while (const std::optional event = window->pollEvent())
             {
-                switch (event.type)
+                if (event->is<sf::Event::Closed>())
                 {
-                    case sf::Event::Closed:
-                        window->close();
-                        break;
-                    case sf::Event::Resized:
-                    {
-                        handleWindowSize();
+                    window->close();
+                }
+                else if (event->is<sf::Event::Resized>())
+                {
+                    handleWindowSize();
 
-                        float width = window->getSize().x;
-                        float height = window->getSize().y;
+                    const float width = static_cast<float>(window->getSize().x);
+                    const float height = static_cast<float>(window->getSize().y);
 
-                        view.setSize(width, height);
-                        view.setCenter({ width / 2, height / 2 });
+                    view.setSize({ width, height });
+                    view.setCenter({ width / 2, height / 2 });
 
-                        if (!client.joined())
-                            loginScreen->on_window_resize(*window);
-                        else
-                            chatScreen->on_window_resize(*window);
-                        break;
-                    }
-                    case sf::Event::MouseButtonReleased:
-                        if (!client.joined())
-                            loginScreen->on_event_click_items(*window);
-                        else
-                        {
-                            if (event.mouseButton.button == sf::Mouse::Left)
-                                chatScreen->on_event_click_items(*window);
-                            else
-                                chatScreen->on_right_click_items(*window);
-                        }
-                        break;
-                    case sf::Event::MouseWheelScrolled:
-                        if (client.joined())
-                        {    
-                            float delta = event.mouseWheelScroll.delta;
-                            chatScreen->on_scrolled(delta, *window);
-                        }
-                        break;
-                    case sf::Event::TextEntered:
-                        if (!client.joined())
-                            loginScreen->on_text_entered(event.text.unicode);
-                        else
-                            chatScreen->on_text_entered(event.text.unicode);
-                        break;
-                    case sf::Event::KeyPressed:
-                        if (!client.joined())
-                            loginScreen->on_key_pressed(event.key.code);
-                        else
-                            chatScreen->on_key_pressed(event.key.code);
-                        break;
-                    default:
-                        break;
+                    if (!client.joined())
+                        loginScreen->on_window_resize(*window);
+                    else
+                        chatScreen->on_window_resize(*window);
+                }
+                else if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonReleased>())
+                {
+                    if (!client.joined())
+                        loginScreen->on_event_click_items(*window);
+                    else if (mouseButton->button == sf::Mouse::Button::Left)
+                        chatScreen->on_event_click_items(*window);
+                    else
+                        chatScreen->on_right_click_items(*window);
+                }
+                else if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>())
+                {
+                    if (client.joined())
+                        chatScreen->on_scrolled(mouseWheel->delta, *window);
+                }
+                else if (const auto* textEntered = event->getIf<sf::Event::TextEntered>())
+                {
+                    if (!client.joined())
+                        loginScreen->on_text_entered(textEntered->unicode);
+                    else
+                        chatScreen->on_text_entered(textEntered->unicode);
+                }
+                else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
+                {
+                    if (!client.joined())
+                        loginScreen->on_key_pressed(keyPressed->code);
+                    else
+                        chatScreen->on_key_pressed(keyPressed->code);
                 }
             }
 
@@ -123,11 +109,11 @@ bool App::run()
                 loginScreen->on_click_items(*window);
                 loginScreen->draw_rt_items();
             }
-            
+
             else
             {
                 if (!chatScreenOpened)
-                {    
+                {
                     chatScreen->on_window_resize(*window);
                     client.newJoiner({ client.getUsername(), client.getId(), client.getColor() });
                     chatScreenOpened = true;
@@ -140,7 +126,7 @@ bool App::run()
                 chatScreen->updateSoundPlayer();
                 chatScreen->draw_rt_items();
             }
-            
+
             window->setView(view);
             window->clear(Theme::Primary);
             if (!client.joined()) window->draw(*loginScreen);
@@ -152,7 +138,7 @@ bool App::run()
     }
 
     else
-    {   
+    {
         std::cout << "Connection to server is failed!" << std::endl;
         return false;
     }
@@ -173,7 +159,7 @@ void App::handleWindowSize()
 
     if (height < 600)
         window->setSize({ width, 600 });
-    
+
     window->setPosition(pos);
 }
 

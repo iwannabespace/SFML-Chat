@@ -3,13 +3,35 @@
 #include <iostream>
 #include <algorithm>
 
-Textbox::Textbox(const sf::String& placeholder, sf::Vector2f size, sf::Vector2f position, sf::Color color, 
-        sf::Color hovered_color, sf::Color focused_color, sf::Color text_color, sf::Color placeholder_color, 
+namespace
+{
+    sf::Vector2f getCharacterPosition(const sf::Text& text, std::size_t index)
+    {
+        const auto& glyphs = text.getShapedGlyphs();
+        const auto glyph = std::find_if(glyphs.begin(), glyphs.end(), [index](const sf::Text::ShapedGlyph& item) {
+            return item.cluster >= index;
+        });
+
+        if (glyph != glyphs.end())
+            return text.getTransform().transformPoint(glyph->position);
+
+        if (!glyphs.empty())
+        {
+            const auto& last = glyphs.back();
+            return text.getTransform().transformPoint(last.position + sf::Vector2f{last.glyph.advance, 0.f});
+        }
+
+        return text.getPosition();
+    }
+}
+
+Textbox::Textbox(const sf::String& placeholder, sf::Vector2f size, sf::Vector2f position, sf::Color color,
+        sf::Color hovered_color, sf::Color focused_color, sf::Color text_color, sf::Color placeholder_color,
         sf::Font& font, float border_width, std::optional<size_t> maxCharacter, const std::string& def, bool numberOnly)
-    : placeholder_str(placeholder), font(font), color(color), hovered_color(hovered_color), focused_color(focused_color), 
+    : text(font), placeholder_text(font), placeholder_str(placeholder), font(font), color(color), hovered_color(hovered_color), focused_color(focused_color),
         cursor_index(0), maxCharacter(maxCharacter), focused(false), selected(false), numberOnly(numberOnly)
 {
-    if (!renderer.create(size.x, size.y))
+    if (!renderer.resize({static_cast<unsigned>(size.x), static_cast<unsigned>(size.y)}))
         std::cerr << "Renderer couldn'be created!" << std::endl;
 
     container.setSize(size);
@@ -22,24 +44,24 @@ Textbox::Textbox(const sf::String& placeholder, sf::Vector2f size, sf::Vector2f 
     text.setString("qwertyuıopğüasdfghjklşizxcvbnmöçQWERTYUIOPĞÜASDFGHJKLŞİZXCVBNMÖÇ");
     text.setCharacterSize(14);
 
-    oneCharHeight = text.getGlobalBounds().height;
+    oneCharHeight = text.getGlobalBounds().size.y;
 
     //Functions::FitText(text, size);
 
     text_pos = {
         5,
-        Functions::GetMiddle(text.getGlobalBounds().height, container.getSize().y, 0, text.getGlobalBounds().top)
+        Functions::GetMiddle(text.getGlobalBounds().size.y, container.getSize().y, 0, text.getGlobalBounds().position.y)
     };
 
     text.setPosition(text_pos);
     text.setString("W");
 
-    oneCharWidth = text.getGlobalBounds().width;
-    
-    cover.setSize({ 50, text.getGlobalBounds().height + 10});
+    oneCharWidth = text.getGlobalBounds().size.x;
+
+    cover.setSize({ 50, text.getGlobalBounds().size.y + 10});
     cover.setPosition({ text_pos.x, std::round(((size.y - cover.getSize().y) / 2))});
     cover.setFillColor(sf::Color::Transparent);
-    text.setString(def + "_"); 
+    text.setString(def + "_");
 
     placeholder_text.setFont(font);
     placeholder_text.setString(placeholder_str);
@@ -63,12 +85,12 @@ void Textbox::on_input(uint32_t character)
         bool deleted = false;
 
         if (std::isprint(character) || character > 127)
-        {    
+        {
             if (((maxCharacter.has_value() && string.getSize() - 1 < maxCharacter.value()) || (!maxCharacter.has_value())) &&
                 ((numberOnly && std::isdigit(character)) || !(numberOnly)))
-            {    
-                string.insert(cursor_index, character);
-        
+            {
+                string.insert(cursor_index, static_cast<char32_t>(character));
+
                 cursor_index++;
                 added = true;
 
@@ -99,24 +121,24 @@ void Textbox::on_input(uint32_t character)
 
         text.setString(string);
 
-        if (text.getGlobalBounds().width >= container.getSize().x)
+        if (text.getGlobalBounds().size.x >= container.getSize().x)
         {
             if (added)
             {
-                if (text.findCharacterPos(cursor_index).x + oneCharWidth >= container.getSize().x)
+                if (getCharacterPosition(text, cursor_index).x + oneCharWidth >= container.getSize().x)
                     text.move({ -oneCharWidth, 0 });
-                
+
                 added = false;
             }
 
             if (deleted)
-            {     
-                if (text.getGlobalBounds().width >= container.getSize().x)
+            {
+                if (text.getGlobalBounds().size.x >= container.getSize().x)
                     text.move({ oneCharWidth, 0});
 
                 if (text.getPosition().x > text_pos.x)
                     text.setPosition({ text_pos.x, text.getPosition().y });
-                
+
                 deleted = false;
             }
         }
@@ -130,7 +152,7 @@ void Textbox::on_shortcuts()
 {
     if (focused)
     {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace))
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Backspace))
         {
             if (string != "_")
             {
@@ -138,24 +160,24 @@ void Textbox::on_shortcuts()
                 text.setString(string);
                 text.setPosition(text_pos);
                 cursor_index = 0;
-        
+
                 if (selected)
                     selected = false;
             }
         }
-        
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
         {
             if (!selected && string.getSize() > 1)
             {
                 cover.setFillColor(sf::Color(72, 98, 136));
                 cover.setPosition({ text.getPosition().x, cover.getPosition().y });
-                cover.setSize({ text.getGlobalBounds().width + text.getLocalBounds().left, cover.getSize().y });
+                cover.setSize({ text.getGlobalBounds().size.x + text.getLocalBounds().position.x, cover.getSize().y });
                 selected = true;
             }
         }
-        
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::C))
         {
             if (selected)
             {
@@ -164,10 +186,10 @@ void Textbox::on_shortcuts()
                 sf::Clipboard::setString(copy);
             }
         }
-        
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::V))
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::V))
         {
-            std::string to_copy = sf::Clipboard::getString();
+            std::string to_copy = sf::Clipboard::getString().toAnsiString();
 
             if (selected)
             {
@@ -183,7 +205,7 @@ void Textbox::on_shortcuts()
             text.setString(string);
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LSystem) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::X))
         {
             if (selected)
             {
@@ -197,12 +219,12 @@ void Textbox::on_shortcuts()
             }
         }
     }
-}   
+}
 
 void Textbox::on_text_left()
 {
     if (focused)
-    {    
+    {
         if (selected)
         {
             selected = false;
@@ -220,7 +242,7 @@ void Textbox::on_text_left()
             string.insert(cursor_index, "_");
             text.setString(string);
 
-            if (text.findCharacterPos(cursor_index).x < 0)
+            if (getCharacterPosition(text, cursor_index).x < 0)
                 text.move({ oneCharWidth, 0});
         }
     }
@@ -237,7 +259,7 @@ void Textbox::on_text_right()
             // string += "_";
             // cursor_index = string.getSize() - 1;
             // text.setString(string);
-            // text.setPosition({ container.getSize().x - (text.getGlobalBounds().width), text_pos.y });
+            // text.setPosition({ container.getSize().x - (text.getGlobalBounds().size.x), text_pos.y });
             // selected = false;
         }
 
@@ -247,7 +269,7 @@ void Textbox::on_text_right()
             string.insert(cursor_index, "_");
             text.setString(string);
 
-            if (text.findCharacterPos(cursor_index).x + oneCharWidth >= container.getSize().x)
+            if (getCharacterPosition(text, cursor_index).x + oneCharWidth >= container.getSize().x)
                 text.move({ -oneCharWidth, 0});
         }
     }
@@ -259,7 +281,7 @@ void Textbox::on_hover(const sf::RenderWindow& window)
     {
         if (container.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
             container.setOutlineColor(hovered_color);
-        
+
         else
             container.setOutlineColor(sf::Color::Transparent);
     }
@@ -267,8 +289,8 @@ void Textbox::on_hover(const sf::RenderWindow& window)
 
 void Textbox::on_click(const sf::RenderWindow& window)
 {
-    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-    {   
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+    {
         bool contains = container.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window)));
 
         if (contains && !focused)
@@ -276,7 +298,7 @@ void Textbox::on_click(const sf::RenderWindow& window)
             container.setOutlineColor(focused_color);
             focused = true;
         }
-        
+
         if (!contains)
         {
             container.setOutlineColor(sf::Color::Transparent);
@@ -305,12 +327,13 @@ void Textbox::draw_rt()
 void Textbox::setPosition(sf::Vector2f position)
 {
     container.setPosition(position);
-}   
+}
 
 void Textbox::setSize(sf::Vector2f size)
 {
     container.setSize(size);
-    renderer.create(size.x, size.y);
+    if (!renderer.resize({static_cast<unsigned>(size.x), static_cast<unsigned>(size.y)}))
+        std::cerr << "Renderer couldn't be resized!" << std::endl;
 
     text_pos = {
         5,
@@ -343,12 +366,30 @@ sf::Vector2f Textbox::getSize() const
 
 std::string Textbox::value() const
 {
-    std::string copy = text.getString();
+    // This is what I've written when I first worked on the project
+    // and it was working fine on macos but now for some reason it crashes on my linux machine.
+    // I use arch btw.
 
-    copy.erase(copy.begin() + cursor_index);
+    // std::string copy = text.getString().toAnsiString();
 
-    return copy;
-}   
+    // copy.erase(copy.begin() + cursor_index);
+
+    // return copy;
+
+
+
+    // This is the fix of AI.
+    // It disgusts me...
+
+    sf::String copy = string;
+
+    if (cursor_index < copy.getSize())
+        copy.erase(cursor_index);
+
+    const sf::U8String utf8 = copy.toUtf8();
+
+    return std::string(utf8.begin(), utf8.end());
+}
 
 bool Textbox::active() const
 {

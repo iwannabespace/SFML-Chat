@@ -24,8 +24,8 @@ class Activatable : public sf::Drawable
         void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     private:
         crd::RoundRect body;
-        sf::Sprite icon;
         sf::Texture iconTexture;
+        sf::Sprite icon;
         sf::Color outlineColor;
         std::function<void()> callback;
         bool _activated = false;
@@ -33,7 +33,6 @@ class Activatable : public sf::Drawable
         bool callbackCalled = false;
         bool callbackSet = false;
         int32_t clickCount = 0;
-
 };
 
 #endif

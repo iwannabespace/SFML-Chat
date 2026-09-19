@@ -2,7 +2,6 @@
 #define COMMON_HPP
 
 #include <SFML/Graphics.hpp>
-#include <array>
 #include <string>
 #include "message.hpp"
 

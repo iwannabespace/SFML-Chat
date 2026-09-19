@@ -1,9 +1,9 @@
 #include "../include/activatable.hpp"
 #include "../include/functions.hpp"
-#include <iostream>
+#include <stdexcept>
 
 Activatable::Activatable(sf::Vector2f size, sf::Vector2f position, sf::Color color, sf::Color borderColor, sf::Color iconColor, const std::string& iconFile)
-    : outlineColor(borderColor)
+    : icon(iconTexture), outlineColor(borderColor)
 {
     body.setSize(size);
     body.setPosition(position);
@@ -12,21 +12,20 @@ Activatable::Activatable(sf::Vector2f size, sf::Vector2f position, sf::Color col
     body.setOutlineThickness(2);
     body.setRadius(6);
 
-    iconTexture.loadFromFile(iconFile);
-    icon.setTexture(iconTexture);
+    if (!iconTexture.loadFromFile(iconFile))
+        throw std::runtime_error("Couldn't load icon texture: " + iconFile);
 
-    // float scaleX = size.x / icon.getLocalBounds().width; 
-    // float scaleY = size.y / icon.getLocalBounds().height;
+    icon.setTexture(iconTexture, true);
+    icon.setColor(iconColor);
+
+    // float scaleX = size.x / icon.getLocalBounds().size.x;
+    // float scaleY = size.y / icon.getLocalBounds().size.y;
     // icon.setScale(scaleX, scaleY);
 
-    icon.setPosition({ 
-        Functions::GetMiddle(icon.getGlobalBounds().width, size.x, position.x, 0),
-        Functions::GetMiddle(icon.getGlobalBounds().height, size.y, position.y, 0),
+    icon.setPosition({
+        Functions::GetMiddle(icon.getGlobalBounds().size.x, size.x, position.x, 0),
+        Functions::GetMiddle(icon.getGlobalBounds().size.y, size.y, position.y, 0),
     });
-
-    iconColor;
-
-    //icon.setColor(iconColor);
 }
 
 Activatable::~Activatable()
@@ -39,7 +38,7 @@ void Activatable::on_hover(const sf::RenderWindow& window)
     {
         if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
             body.setOutlineColor(outlineColor);
-        
+
         else
             body.setOutlineColor(sf::Color::Transparent);
     }
@@ -48,7 +47,7 @@ void Activatable::on_hover(const sf::RenderWindow& window)
 void Activatable::on_event_click(const sf::RenderWindow& window)
 {
     if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
-    {    
+    {
         _activated = !_activated;
         clickCount++;
 
@@ -56,7 +55,7 @@ void Activatable::on_event_click(const sf::RenderWindow& window)
 
         if (_activated)
             body.setOutlineColor(outlineColor);
-        
+
         else
             body.setOutlineColor(sf::Color::Transparent);
     }
@@ -65,7 +64,7 @@ void Activatable::on_event_click(const sf::RenderWindow& window)
 void Activatable::on_active()
 {
     if (callbackSet && _activated && !callbackCalled)
-    {    
+    {
         callback();
         callbackCalled = true;
     }
@@ -80,18 +79,18 @@ void Activatable::setCallback(const std::function<void()>& _callback)
 void Activatable::setPosition(sf::Vector2f position)
 {
     body.setPosition(position);
-    icon.setPosition({ 
-        Functions::GetMiddle(icon.getGlobalBounds().width, body.getSize().x, position.x, 0),
-        Functions::GetMiddle(icon.getGlobalBounds().height, body.getSize().y, position.y, 0),
+    icon.setPosition({
+        Functions::GetMiddle(icon.getGlobalBounds().size.x, body.getSize().x, position.x, 0),
+        Functions::GetMiddle(icon.getGlobalBounds().size.y, body.getSize().y, position.y, 0),
     });
 }
 
 void Activatable::setSize(sf::Vector2f size)
 {
     body.setSize(size);
-    icon.setPosition({ 
-        Functions::GetMiddle(icon.getGlobalBounds().width, size.x, body.getPosition().x, 0),
-        Functions::GetMiddle(icon.getGlobalBounds().height, size.y, body.getPosition().y, 0),
+    icon.setPosition({
+        Functions::GetMiddle(icon.getGlobalBounds().size.x, size.x, body.getPosition().x, 0),
+        Functions::GetMiddle(icon.getGlobalBounds().size.y, size.y, body.getPosition().y, 0),
     });
 }
 

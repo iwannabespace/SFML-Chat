@@ -1,7 +1,6 @@
 #include "../include/image_viewer.hpp"
 #include "../include/functions.hpp"
 #include "../include/theme.hpp"
-#include <iostream>
 
 ImageViewer::ImageViewer(const std::string& _filename, sf::Font& font)
     : font(font), options(font, 200)
@@ -13,7 +12,7 @@ ImageViewer::ImageViewer(const std::string& _filename, sf::Font& font)
 
     if (!imageTexture.loadFromImage(image))
         throw "Texture couldn't be loaded";
-    
+
     imageContainer.setTexture(&imageTexture);
     imageContainer.setOutlineColor(sf::Color::Transparent);
 
@@ -24,9 +23,13 @@ ImageViewer::ImageViewer(const std::string& _filename, sf::Font& font)
         options.addOption("Reveal in file explorer", [this]() {
             system(std::string("explorer.exe /select " + this->filename).c_str());
         });
-    #elif __APPLE__
+    #elif defined(__APPLE__)
         options.addOption("Reveal in finder", [this]() {
             system(std::string("open -R " + this->filename).c_str());
+        });
+    #elif defined(__linux__)
+        options.addOption("Open containing folder", [this]() {
+            system(std::string("xdg-open " + this->filename).c_str());
         });
     #endif
 }
@@ -41,7 +44,7 @@ ImageViewer::ImageViewer(const ImageViewer& rhs)
 
     if (!imageTexture.loadFromImage(image))
         throw "Texture couldn't be loaded";
-    
+
     imageContainer.setTexture(&imageTexture);
     imageContainer.setOutlineColor(sf::Color::Transparent);
 
@@ -52,9 +55,13 @@ ImageViewer::ImageViewer(const ImageViewer& rhs)
         options.addOption("Reveal in file explorer", [this]() {
             system(std::string("explorer.exe /select " + this->filename).c_str());
         });
-    #elif __APPLE__
+    #elif defined(__APPLE__)
         options.addOption("Reveal in finder", [this]() {
             system(std::string("open -R " + this->filename).c_str());
+        });
+    #elif defined(__linux__)
+        options.addOption("Open containing folder", [this]() {
+            system(std::string("xdg-open " + this->filename).c_str());
         });
     #endif
 }
@@ -67,9 +74,9 @@ void ImageViewer::on_hover(const sf::RenderWindow& window)
 {
     if (!_opened)
     {
-         if (imageContainer.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
+        if (imageContainer.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
             imageContainer.setOutlineColor(outlineColor);
-        
+
         else
             imageContainer.setOutlineColor(sf::Color::Transparent);
     }
@@ -101,7 +108,7 @@ void ImageViewer::on_click(const sf::RenderWindow& window)
     else
     {
         if (_opened)
-        {    
+        {
             imageContainer.setSize(defaultSize);
             imageContainer.setPosition(defaultPosition);
             _opened = false;
@@ -121,7 +128,7 @@ void ImageViewer::on_hover_items(const sf::RenderWindow& window)
 void ImageViewer::on_event_click_items(const sf::RenderWindow& window)
 {
     if (_showOptions)
-    {   
+    {
         options.on_click(window);
         _showOptions = false;
     }
@@ -208,7 +215,7 @@ ImageViewer& ImageViewer::operator=(const ImageViewer& rhs)
 
     if (!imageTexture.loadFromImage(image))
         throw "Texture couldn't be loaded";
-    
+
     imageContainer.setTexture(&imageTexture);
     imageContainer.setOutlineColor(sf::Color::Transparent);
 
@@ -221,10 +228,13 @@ ImageViewer& ImageViewer::operator=(const ImageViewer& rhs)
         options.addOption("Reveal in file explorer", [this]() {
             system(std::string("explorer.exe /select " + this->filename).c_str());
         });
-    #elif __APPLE__
+    #elif defined(__APPLE__)
         options.addOption("Reveal in finder", [this]() {
             system(std::string("open -R " + this->filename).c_str());
-            std::cout << "Sa" << std::endl;
+        });
+    #elif defined(__linux__)
+        options.addOption("Open containing folder", [this]() {
+            system(std::string("xdg-open " + this->filename).c_str());
         });
     #endif
 

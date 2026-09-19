@@ -2,6 +2,7 @@
 #define SERVER_HPP
 
 #include <SFML/Network.hpp>
+#include <cstdint>
 #include <unordered_map>
 #include "client.hpp"
 
@@ -12,18 +13,18 @@ class Server
         ~Server();
         bool listen();
         void run();
-        void sendOnly(sf::Uint64 id, sf::Packet& packet);
-        void sendExcept(sf::Uint64 id, sf::Packet& packet);
-        void sendClientRemoved(sf::Uint64 id);
-        void sendClientId(sf::Uint64 id);
-        void sendAllNewClient(sf::Uint64 id);
-        void sendOtherClientInfos(sf::Uint64 id);
+        void sendOnly(std::uint64_t id, sf::Packet& packet);
+        void sendExcept(std::uint64_t id, sf::Packet& packet);
+        void sendClientRemoved(std::uint64_t id);
+        void sendClientId(std::uint64_t id);
+        void sendAllNewClient(std::uint64_t id);
+        void sendOtherClientInfos(std::uint64_t id);
     private:
         unsigned short port;
         sf::TcpListener listener;
         sf::SocketSelector selector;
-        std::unordered_map<sf::Uint64, Client> clients;
-        sf::Uint64 joinedCount = 0;
+        std::unordered_map<std::uint64_t, Client> clients;
+        std::uint64_t joinedCount = 0;
         size_t received;
 };
 

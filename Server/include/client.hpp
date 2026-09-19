@@ -3,13 +3,14 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <cstdint>
 #include <string>
 
 struct Client
 {
     std::string username;
     sf::TcpSocket* socket;
-    sf::Uint64 id;
+    std::uint64_t id;
     sf::Color color;
     bool joined = false;
 };

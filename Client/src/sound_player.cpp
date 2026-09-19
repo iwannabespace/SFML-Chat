@@ -3,10 +3,11 @@
 #include <iostream>
 
 SoundPlayer::SoundPlayer(const std::string& _filename, sf::Font& font)
-    : valueBar({}, {}, sf::Color::White, sf::Color::Black, 0), font(font)
+    : valueBar({}, {}, sf::Color::White, sf::Color::Black, 0),
+      currentTimeText(font), soundLengthText(font), font(font)
 {
     filename = _filename;
-    
+
     if (!music.openFromFile(filename))
         std::cout << filename << " coudln't be opened!" << std::endl;
 
@@ -25,10 +26,11 @@ SoundPlayer::SoundPlayer(const std::string& _filename, sf::Font& font)
 }
 
 SoundPlayer::SoundPlayer(const SoundPlayer& rhs)
-    : valueBar({}, {}, sf::Color::White, sf::Color::Black, 0), font(rhs.font)
+    : valueBar({}, {}, sf::Color::White, sf::Color::Black, 0),
+      currentTimeText(rhs.font), soundLengthText(rhs.font), font(rhs.font)
 {
     filename = rhs.filename;
-    
+
     if (!music.openFromFile(filename))
         std::cout << filename << " coudln't be opened!" << std::endl;
 
@@ -54,7 +56,7 @@ void SoundPlayer::on_hover(const sf::RenderWindow& window)
 {
     if (container.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
         container.setFillColor(hoverColor);
-    
+
     else
         container.setFillColor(fillColor);
 }
@@ -77,7 +79,7 @@ void SoundPlayer::updateBar()
     auto status = music.getStatus();
 
     if (status == sf::Music::Status::Playing)
-    {    
+    {
         float currentOffset = music.getPlayingOffset().asSeconds();
         currentTimeText.setString(Functions::ConvertTimeToText(currentOffset));
         valueBar.setValue(currentOffset);
@@ -92,14 +94,14 @@ void SoundPlayer::setSize(sf::Vector2f size)
 
 void SoundPlayer::setPosition(sf::Vector2f position)
 {
-    float totalWidth = currentTimeText.getGlobalBounds().width + valueBar.getSize().x + soundLengthText.getGlobalBounds().width + 20; 
+    float totalWidth = currentTimeText.getGlobalBounds().size.x + valueBar.getSize().x + soundLengthText.getGlobalBounds().size.x + 20;
     container.setPosition(position);
     currentTimeText.setPosition({
         Functions::GetMiddle(totalWidth, container.getSize().x, container.getPosition().x, 0),
         Functions::GetMiddle(Functions::GetTextMaxHeight(currentTimeText), container.getSize().y, container.getPosition().y, 0)
     });
     valueBar.setPosition({
-        currentTimeText.getPosition().x + currentTimeText.getGlobalBounds().width + 5,
+        currentTimeText.getPosition().x + currentTimeText.getGlobalBounds().size.x + 5,
         Functions::GetMiddle(valueBar.getSize().y, container.getSize().y, container.getPosition().y, 0),
     });
     soundLengthText.setPosition({
@@ -153,10 +155,10 @@ const std::string& SoundPlayer::getFilename() const
 SoundPlayer& SoundPlayer::operator=(const SoundPlayer& rhs)
 {
     filename = rhs.filename;
-    
+
     if (!music.openFromFile(filename))
         std::cout << filename << " coudln't be opened!" << std::endl;
-    
+
     font = rhs.font;
 
     valueBar.setSize({ 60, 10 });

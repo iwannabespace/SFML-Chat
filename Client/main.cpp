@@ -1,5 +1,4 @@
 #include "include/app.hpp"
-#include "include/portable-file-dialogs.h"
 
 int main()
 {

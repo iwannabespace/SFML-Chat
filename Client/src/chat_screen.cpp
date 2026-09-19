@@ -4,17 +4,19 @@
 #include "../include/portable-file-dialogs.h"
 #include "../../Shared/shared.hpp"
 #include <filesystem>
+#include <iostream>
 
 ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font& font)
-    : inputBox("text...", { 10, 10 }, {}, Theme::Secondary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, std::nullopt),
+    : onlinesBarText(font),
+      inputBox("text...", { 10, 10 }, {}, Theme::Secondary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, std::nullopt),
       sendButton({}, {}, Theme::Secondary, Theme::Text, Theme::Text, "send", font),
       sendFileButton({}, {}, Theme::Secondary, Theme::Text, Theme::Text, "choose", font),
-      soundRecorderButton({}, {}, Theme::Secondary, Theme::Text, Theme::Text, "files/microphone_24.png"),
+      soundRecorderButton({}, {}, Theme::Secondary, Theme::Text, Theme::Text, "assets/icons/microphone_24.png"),
       client(client)
 {
     float winw = window.getSize().x;
     float winh = window.getSize().y;
-    
+
     onlinesTitleBar.setSize({ 150, 30 });
     onlinesTitleBar.setPosition({ winw - onlinesTitleBar.getSize().x, 0 });
     onlinesTitleBar.setFillColor(Theme::Secondary);
@@ -22,15 +24,16 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
     onlinesBar.setSize({ onlinesTitleBar.getSize().x, winh - onlinesTitleBar.getSize().y });
     onlinesBar.setPosition({ winw - onlinesBar.getSize().x, 30 });
 
-    if (!onlinesBarRT.create(onlinesTitleBar.getSize().x, winh - onlinesTitleBar.getSize().y))
+    if (!onlinesBarRT.resize({static_cast<unsigned>(onlinesTitleBar.getSize().x),
+                              static_cast<unsigned>(winh - onlinesTitleBar.getSize().y)}))
         throw "onlinesBarRT couldn't be created!";
 
     onlinesBarText.setFont(font);
     onlinesBarText.setCharacterSize(14);
     onlinesBarText.setString("Online Gays");
     onlinesBarText.setPosition({
-        Functions::GetMiddle(onlinesBarText.getGlobalBounds().width, onlinesTitleBar.getSize().x, onlinesTitleBar.getPosition().x, 0),
-        Functions::GetMiddle(onlinesBarText.getGlobalBounds().height, onlinesTitleBar.getSize().y, onlinesTitleBar.getPosition().y, 0),
+        Functions::GetMiddle(onlinesBarText.getGlobalBounds().size.x, onlinesTitleBar.getSize().x, onlinesTitleBar.getPosition().x, 0),
+        Functions::GetMiddle(onlinesBarText.getGlobalBounds().size.y, onlinesTitleBar.getSize().y, onlinesTitleBar.getPosition().y, 0),
     });
     onlinesBarText.setFillColor(Theme::Text);
 
@@ -41,7 +44,7 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
 
     sendFileButton.setSize(buttonSize);
     sendFileButton.setPosition({ soundRecorderButton.getPosition().x - buttonSize.x - 10, winh - buttonSize.y - 10 });
-    
+
     sendButton.setSize(buttonSize);
     sendButton.setPosition({ sendFileButton.getPosition().x - buttonSize.x - 10, winh - buttonSize.y - 10 });
 
@@ -51,23 +54,24 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
     messageDrawContainer.setSize({ winw - onlinesTitleBar.getSize().x, winh - (winh - inputBox.getPosition().y) - 50 });
     messageDrawContainer.setPosition({ 0, 0 });
 
-    if (!messagesRt.create(messageDrawContainer.getSize().x, messageDrawContainer.getSize().y))
+    if (!messagesRt.resize({static_cast<unsigned>(messageDrawContainer.getSize().x),
+                            static_cast<unsigned>(messageDrawContainer.getSize().y)}))
         throw "messageRt couldn't be created!";
 
     client.setOnJoinerJoinedCallback([this, &font](const Joiner& joiner) {
-        sf::Text text(joiner.username, font, 14);
+        sf::Text text(font, joiner.username, 14);
         sf::Vector2f pos = { 5, 5 };
 
         if (!this->onlines.empty()) {
             sf::Text last = this->onlines.back().second;
-            pos.y = last.getPosition().y + last.getGlobalBounds().height + 20;
+            pos.y = last.getPosition().y + last.getGlobalBounds().size.y + 20;
         }
 
         text.setPosition(pos);
         text.setFillColor(joiner.color);
         this->onlines.emplace_back(joiner.id, text);
     });
-    
+
     client.setOnMessageReceivedCallback([this, &font](const Message& message) {
         sf::Vector2f pos = { 10, 10 };
         MessageContainer container(message, font);
@@ -102,7 +106,7 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
 
     client.setOnJoinerRemovedCallback([this](const Joiner& joiner) {
         this->onlines.erase(std::remove_if(
-            this->onlines.begin(), 
+            this->onlines.begin(),
             this->onlines.end(),
             [&joiner](const std::pair<uint64_t, sf::Text>& online) { return online.first == joiner.id; }),
             this->onlines.end()
@@ -117,7 +121,8 @@ ChatScreen::ChatScreen(const sf::RenderWindow& window, Client& client, sf::Font&
     });
 
     soundRecorderButton.setCallback([this]() {
-        this->soundRecorder.start();
+        if (!this->soundRecorder.start())
+            std::cerr << "Sound recorder couldn't be started!" << std::endl;
     });
 }
 
@@ -126,7 +131,7 @@ ChatScreen::~ChatScreen()
 }
 
 void ChatScreen::on_window_resize(const sf::RenderWindow& window)
-{   
+{
     float winw = window.getSize().x;
     float winh = window.getSize().y;
 
@@ -135,14 +140,15 @@ void ChatScreen::on_window_resize(const sf::RenderWindow& window)
     onlinesBar.setSize({ onlinesTitleBar.getSize().x, winh - onlinesTitleBar.getSize().y });
     onlinesBar.setPosition({ winw - onlinesBar.getSize().x, 30 });
 
-    if (!onlinesBarRT.create(onlinesTitleBar.getSize().x, winh - onlinesTitleBar.getSize().y))
+    if (!onlinesBarRT.resize({static_cast<unsigned>(onlinesTitleBar.getSize().x),
+                              static_cast<unsigned>(winh - onlinesTitleBar.getSize().y)}))
         throw "onlinesBarRT couldn't be created!";
-    
+
     onlinesBarText.setPosition({
-        Functions::GetMiddle(onlinesBarText.getGlobalBounds().width, onlinesTitleBar.getSize().x, onlinesTitleBar.getPosition().x, 0),
-        Functions::GetMiddle(onlinesBarText.getGlobalBounds().height, onlinesTitleBar.getSize().y, onlinesTitleBar.getPosition().y, 0),
+        Functions::GetMiddle(onlinesBarText.getGlobalBounds().size.x, onlinesTitleBar.getSize().x, onlinesTitleBar.getPosition().x, 0),
+        Functions::GetMiddle(onlinesBarText.getGlobalBounds().size.y, onlinesTitleBar.getSize().y, onlinesTitleBar.getPosition().y, 0),
     });
-    
+
     sf::Vector2f buttonSize = { 60, 40 };
 
     soundRecorderButton.setPosition({ onlinesBar.getPosition().x - buttonSize.x - 20, winh - buttonSize.y - 10 });
@@ -154,7 +160,8 @@ void ChatScreen::on_window_resize(const sf::RenderWindow& window)
 
     messageDrawContainer.setSize({ winw - onlinesTitleBar.getSize().x, winh - (winh - inputBox.getPosition().y) - 50 });
 
-    if (!messagesRt.create(messageDrawContainer.getSize().x, messageDrawContainer.getSize().y))
+    if (!messagesRt.resize({static_cast<unsigned>(messageDrawContainer.getSize().x),
+                            static_cast<unsigned>(messageDrawContainer.getSize().y)}))
         throw "messageRt couldn't be created!";
 
     for (auto& message : messages) {
@@ -193,7 +200,7 @@ void ChatScreen::on_event_click_items(const sf::RenderWindow& window)
 {
     sendButton.on_click(window, [this]() {
         if (this->client.sendMessage(Shared::TEXT, this->inputBox.value()))
-        {   
+        {
             uint64_t id = this->client.getId();
             Message message = Functions::CreateMessage(id, Shared::TEXT, this->inputBox.value(), "");
             message.joiner = { this->client.getUsername(), id, this->client.getColor() };
@@ -207,7 +214,7 @@ void ChatScreen::on_event_click_items(const sf::RenderWindow& window)
         auto content = Functions::ReadFileAsBinary(result[0]);
 
         auto extension = std::filesystem::path(result[0]).extension().string();
- 
+
         if (this->client.sendMessage(Shared::FILE, content, extension))
         {
             auto joiner = Joiner();
@@ -217,7 +224,7 @@ void ChatScreen::on_event_click_items(const sf::RenderWindow& window)
             this->client.newMessage({ joiner.id, joiner, result[0], MessageType::File });
         }
     });
-    
+
     soundRecorderButton.on_event_click(window);
 
     for (auto& message : messages)
@@ -243,12 +250,12 @@ void ChatScreen::on_key_pressed(sf::Keyboard::Key key)
         inputBox.on_text_right();
     }
 
-    else if (key == sf::Keyboard::Return)
+    else if (key == sf::Keyboard::Key::Enter)
     {
         if (inputBox.active())
         {
             if (client.sendMessage(Shared::TEXT, inputBox.value()))
-            {    
+            {
                 uint64_t id = this->client.getId();
                 Message message = Functions::CreateMessage(id, Shared::TEXT, this->inputBox.value(), "");
                 message.joiner = { this->client.getUsername(), id, this->client.getColor() };
@@ -261,17 +268,17 @@ void ChatScreen::on_key_pressed(sf::Keyboard::Key key)
 
 void ChatScreen::on_scrolled(float delta, const sf::RenderWindow& window)
 {
-    if ((delta < 0 && (onlines.back().second.getPosition().y + onlines.back().second.getGlobalBounds().height > onlinesBar.getSize().y)) || 
+    if ((delta < 0 && (onlines.back().second.getPosition().y + onlines.back().second.getGlobalBounds().size.y > onlinesBar.getSize().y)) ||
         (delta > 0 && (onlines.front().second.getPosition().y < 5 )))
-    {    
+    {
         if (onlinesBar.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
             for (auto& [id, online] : onlines)
                 online.move({ 0, std::round(delta) });
     }
-    
-    else if ((delta < 0 && (messages.back().getPosition().y + messages.back().getSize().y > messageDrawContainer.getSize().y)) || 
+
+    else if ((delta < 0 && (messages.back().getPosition().y + messages.back().getSize().y > messageDrawContainer.getSize().y)) ||
         (delta > 0 && (messages.front().getPosition().y < 10 )))
-    {    
+    {
         if (messageDrawContainer.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
             for (auto& message : messages)
                 message.move({ 0, std::round(delta) });
@@ -290,13 +297,11 @@ void ChatScreen::on_recorder_stopped()
         soundRecorder.stop();
         const sf::SoundBuffer& buffer = soundRecorder.getBuffer();
         std::string filename = "files/" + Functions::GetFileName() + ".ogg";
-        
+
         if (!buffer.saveToFile(filename))
             throw "Recording couldn't be saved!";
-        
+
         std::string content = Functions::ReadFileAsBinary(filename);
-        uint64_t id = client.getId();
-        
         if (client.sendMessage(Shared::SOUND, content, ".ogg"))
         {
             auto joiner = Joiner();
@@ -319,18 +324,18 @@ void ChatScreen::draw_rt_items()
     inputBox.draw_rt();
 
     onlinesBarRT.clear(Theme::Secondary);
-    
+
     for (const auto& [id, online] : onlines)
         onlinesBarRT.draw(online);
-    
+
     onlinesBarRT.display();
     onlinesBar.setTexture(&onlinesBarRT.getTexture(), true);
 
     messagesRt.clear(Theme::Primary);
 
-    for (const auto& message : messages) 
+    for (const auto& message : messages)
         messagesRt.draw(message);
-    
+
     messagesRt.display();
     messageDrawContainer.setTexture(&messagesRt.getTexture(), true);
 }

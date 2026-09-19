@@ -42,7 +42,7 @@ void Options::setPosition(sf::Vector2f position)
 }
 
 void Options::setFillColor(sf::Color color)
-{   
+{
     fillColor = color;
     container.setFillColor(color);
 }
@@ -106,7 +106,7 @@ sf::FloatRect Options::getGlobalBounds() const
 void Options::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     target.draw(container, states);
-    
+
     for (const Option& option : options)
         target.draw(option, states);
 }

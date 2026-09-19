@@ -1,13 +1,14 @@
 #include "../include/login_screen.hpp"
 #include "../include/theme.hpp"
 #include "../include/functions.hpp"
-#include <iostream>
 
 LoginScreen::LoginScreen(const sf::RenderWindow& window, Client& client, sf::Font& font)
     : usernameTextbox("username", { 200, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 15),
       rTextbox("R", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
       gTextbox("G", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
       bTextbox("B", { 45, 25 }, {}, Theme::Primary, Theme::Text, Theme::Text, Theme::Text, Theme::Text, font, 1, 3, "", true),
+      usernameText(font),
+      rgbText(font),
       button({ 70, 30 }, { 30, 200 }, Theme::Primary, sf::Color::White, Theme::Text, "Connect", font),
       client(client)
 {
@@ -27,7 +28,7 @@ LoginScreen::LoginScreen(const sf::RenderWindow& window, Client& client, sf::Fon
     usernameText.setFillColor(Theme::Text);
     usernameText.setPosition({ itemPosX, mainFrame.getPosition().y + 15 });
 
-    usernameTextbox.setPosition({ itemPosX, usernameText.getPosition().y + usernameText.getGlobalBounds().height + 15 });
+    usernameTextbox.setPosition({ itemPosX, usernameText.getPosition().y + usernameText.getGlobalBounds().size.y + 15 });
 
     rgbText.setFont(font);
     rgbText.setString("Pick a color");
@@ -35,16 +36,16 @@ LoginScreen::LoginScreen(const sf::RenderWindow& window, Client& client, sf::Fon
     rgbText.setFillColor(Theme::Text);
     rgbText.setPosition({ itemPosX, usernameTextbox.getPosition().y + usernameTextbox.getSize().y + 15 });
 
-    rTextbox.setPosition({ itemPosX, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
-    gTextbox.setPosition({ rTextbox.getPosition().x + rTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
-    bTextbox.setPosition({ gTextbox.getPosition().x + gTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
+    rTextbox.setPosition({ itemPosX, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
+    gTextbox.setPosition({ rTextbox.getPosition().x + rTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
+    bTextbox.setPosition({ gTextbox.getPosition().x + gTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
 
     colorPreviewBox.setSize({ 25, 25 });
     colorPreviewBox.setPosition({ bTextbox.getPosition().x + bTextbox.getSize().x + 25, bTextbox.getPosition().y });
     colorPreviewBox.setFillColor(sf::Color::Black);
     colorPreviewBox.setRadius(4);
 
-    button.setPosition({ 
+    button.setPosition({
         Functions::GetMiddle(button.getSize().x, mainFrame.getSize().x, mainFrame.getPosition().x, 0),
         mainFrame.getPosition().y + mainFrame.getSize().y - button.getSize().y - 10,
     });
@@ -65,17 +66,17 @@ void LoginScreen::on_window_resize(const sf::RenderWindow& window)
 
     usernameText.setPosition({ itemPosX, mainFrame.getPosition().y + 15 });
 
-    usernameTextbox.setPosition({ itemPosX, usernameText.getPosition().y + usernameText.getGlobalBounds().height + 15 });
+    usernameTextbox.setPosition({ itemPosX, usernameText.getPosition().y + usernameText.getGlobalBounds().size.y + 15 });
 
     rgbText.setPosition({ itemPosX, usernameTextbox.getPosition().y + usernameTextbox.getSize().y + 15 });
 
-    rTextbox.setPosition({ itemPosX, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
-    gTextbox.setPosition({ rTextbox.getPosition().x + rTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
-    bTextbox.setPosition({ gTextbox.getPosition().x + gTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().height + 15 });
+    rTextbox.setPosition({ itemPosX, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
+    gTextbox.setPosition({ rTextbox.getPosition().x + rTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
+    bTextbox.setPosition({ gTextbox.getPosition().x + gTextbox.getSize().x + 5, rgbText.getPosition().y + rgbText.getGlobalBounds().size.y + 15 });
 
     colorPreviewBox.setPosition({ bTextbox.getPosition().x + bTextbox.getSize().x + 25, bTextbox.getPosition().y });
 
-    button.setPosition({ 
+    button.setPosition({
         Functions::GetMiddle(button.getSize().x, mainFrame.getSize().x, mainFrame.getPosition().x, 0),
         mainFrame.getPosition().y + mainFrame.getSize().y - button.getSize().y - 10,
     });
@@ -104,8 +105,8 @@ void LoginScreen::on_event_click_items(const sf::RenderWindow& window)
         std::string username = this->usernameTextbox.value();
         sf::Color color = Functions::GetColorFromTextbox(rTextbox.value(), gTextbox.value(), bTextbox.value());
         this->client.join(username, color);
-    });   
-}   
+    });
+}
 
 void LoginScreen::on_text_entered(uint32_t character)
 {

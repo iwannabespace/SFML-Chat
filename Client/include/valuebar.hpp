@@ -4,7 +4,7 @@
 #include <SFML/Graphics.hpp>
 
 class ValueBar : public sf::Drawable
-{   
+{
     public:
         ValueBar(sf::Vector2f size, sf::Vector2f position, sf::Color inner_color, sf::Color outer_color, float _max);
         ~ValueBar();

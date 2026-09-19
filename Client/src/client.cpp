@@ -1,7 +1,5 @@
 #include "../include/client.hpp"
 #include "../../Shared/shared.hpp"
-#include <thread>
-#include <iostream>
 
 Client::Client(const sf::IpAddress& host, unsigned short port)
     : host(host), port(port)
@@ -15,7 +13,7 @@ Client::~Client()
 
 bool Client::connect()
 {
-    return (_connected = (socket.connect(host, port) == sf::Socket::Done));
+    return (_connected = (socket.connect(host, port) == sf::Socket::Status::Done));
 }
 
 bool Client::join(const std::string& _username, sf::Color _color)
@@ -45,7 +43,7 @@ bool Client::send(sf::Packet& packet)
         _connected = false;
     }
 
-    return status == sf::Socket::Status::Done; 
+    return status == sf::Socket::Status::Done;
 }
 
 bool Client::receive(sf::Packet& packet)
@@ -91,7 +89,7 @@ void Client::newJoiner(const Joiner& joiner)
 {
     joiners[joiner.id] = joiner;
 
-    if (joinerCallback) 
+    if (joinerCallback)
         joinerCallback(joiner);
 }
 
@@ -130,7 +128,7 @@ sf::Color Client::getColor() const
     return color;
 }
 
-bool Client::isMe(uint64_t _id) const 
+bool Client::isMe(uint64_t _id) const
 {
     return id == _id;
 }

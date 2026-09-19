@@ -1,10 +1,5 @@
 #include "../include/server.hpp"
 #include "../../Shared/shared.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <thread>
 #include <SFML/Graphics.hpp>
 
 Server::Server(unsigned short port)
@@ -18,7 +13,7 @@ Server::~Server()
 
 bool Server::listen()
 {
-    if (listener.listen(port) != sf::Socket::Done)
+    if (listener.listen(port) != sf::Socket::Status::Done)
         return false;
 
     return true;
@@ -26,7 +21,7 @@ bool Server::listen()
 
 void Server::run()
 {
-    sf::Uint64 id = 0;
+    std::uint64_t id = 0;
 
     if (this->listen())
     {
@@ -35,12 +30,12 @@ void Server::run()
         while (true)
         {
             if (selector.wait())
-            {  
+            {
                 if (selector.isReady(listener))
                 {
                     sf::TcpSocket* socket = new sf::TcpSocket;
-                    
-                    if (listener.accept(*socket) == sf::Socket::Done)
+
+                    if (listener.accept(*socket) == sf::Socket::Status::Done)
                     {
                         clients[id] = { "", socket, id, {} };
                         selector.add(*socket);
@@ -50,7 +45,7 @@ void Server::run()
                     else
                         delete socket;
                 }
-                
+
                 else
                 {
                     for (auto it = clients.begin(); it != clients.end();)
@@ -68,7 +63,7 @@ void Server::run()
 
                             sf::Socket::Status status = clientSocket->receive(recvPacket);
 
-                            if (status == sf::Socket::Done)
+                            if (status == sf::Socket::Status::Done)
                             {
                                 uint8_t descriptor;
                                 recvPacket >> descriptor;
@@ -91,20 +86,20 @@ void Server::run()
 
                                 else if (descriptor == Shared::MESSAGE)
                                 {
-                                    sf::Uint64 incId;
-                                    sf::Uint8 type;
+                                    std::uint64_t incId;
+                                    std::uint8_t type;
                                     std::string data;
                                     std::string extension;
-                                    
+
                                     recvPacket >> incId >> type >> data >> extension;
                                     sendPacket << Shared::MESSAGE << incId << type << data << extension;
                                     sendExcept(clientId, sendPacket);
                                 }
                             }
 
-                            else if (status == sf::Socket::Disconnected)
+                            else if (status == sf::Socket::Status::Disconnected)
                             {
-                                if (client.joined) 
+                                if (client.joined)
                                     sendClientRemoved(clientId);
 
                                 selector.remove(*clientSocket);
@@ -124,56 +119,56 @@ void Server::run()
     }
 }
 
-void Server::sendOnly(sf::Uint64 id, sf::Packet& packet)
+void Server::sendOnly(std::uint64_t id, sf::Packet& packet)
 {
     auto& client = clients[id];
 
     if (client.joined)
-        client.socket->send(packet);
+        (void)client.socket->send(packet);
 }
 
-void Server::sendExcept(sf::Uint64 id, sf::Packet& packet)
+void Server::sendExcept(std::uint64_t id, sf::Packet& packet)
 {
     if (joinedCount > 1)
         for (auto [clientId, client] : clients)
             if (clientId != id && client.joined)
-                client.socket->send(packet);
+                (void)client.socket->send(packet);
 }
 
-void Server::sendClientId(sf::Uint64 id)
+void Server::sendClientId(std::uint64_t id)
 {
     sf::Packet packet;
 
     packet << Shared::ID << id;
 
-    sendOnly(id, packet); 
+    sendOnly(id, packet);
 }
 
-void Server::sendClientRemoved(sf::Uint64 id)
+void Server::sendClientRemoved(std::uint64_t id)
 {
     sf::Packet packet;
 
     packet << Shared::CLIENT_REMOVE << id;
 
-    sendExcept(id, packet); 
+    sendExcept(id, packet);
 }
 
-void Server::sendAllNewClient(sf::Uint64 id)
+void Server::sendAllNewClient(std::uint64_t id)
 {
     sf::Packet packet;
 
     auto client = clients[id];
     packet << Shared::NEW_CLIENT << id << client.username << client.color.r << client.color.g << client.color.b;
-    
+
     sendExcept(id, packet);
 }
 
-void Server::sendOtherClientInfos(sf::Uint64 id)
+void Server::sendOtherClientInfos(std::uint64_t id)
 {
     if (joinedCount > 1)
     {
         sf::Packet packet;
-        
+
         packet << Shared::OTHER_CLIENTS << joinedCount - 1;
 
         for (auto [clientId, client] : clients)
@@ -181,6 +176,6 @@ void Server::sendOtherClientInfos(sf::Uint64 id)
                 packet << clientId << client.username
                     << client.color.r << client.color.g << client.color.b;
 
-        clients[id].socket->send(packet);
+        (void)clients[id].socket->send(packet);
     }
-}     
+}

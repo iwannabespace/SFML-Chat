@@ -2,7 +2,7 @@
 #include "../include/functions.hpp"
 
 Button::Button(sf::Vector2f size, sf::Vector2f position, sf::Color color, sf::Color borderColor, sf::Color textColor, const std::string& textOf, sf::Font& font)
-    : outlineColor(borderColor)
+    : text(font), outlineColor(borderColor)
 {
     body.setSize(size);
     body.setPosition(position);
@@ -16,8 +16,8 @@ Button::Button(sf::Vector2f size, sf::Vector2f position, sf::Color color, sf::Co
     text.setCharacterSize(12);
     text.setFillColor(textColor);
     text.setPosition({
-        Functions::GetMiddle(text.getGlobalBounds().width, size.x, position.x, 0),
-        Functions::GetMiddle(text.getGlobalBounds().height, size.y, position.y, text.getGlobalBounds().top),
+        Functions::GetMiddle(text.getGlobalBounds().size.x, size.x, position.x, 0),
+        Functions::GetMiddle(text.getGlobalBounds().size.y, size.y, position.y, text.getGlobalBounds().position.y),
     });
 }
 
@@ -29,7 +29,7 @@ void Button::on_hover(const sf::RenderWindow& window)
 {
     if (body.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
         body.setOutlineColor(outlineColor);
-    
+
     else
         body.setOutlineColor(sf::Color::Transparent);
 }
@@ -44,8 +44,8 @@ void Button::setPosition(sf::Vector2f position)
 {
     body.setPosition(position);
     text.setPosition({
-        Functions::GetMiddle(text.getGlobalBounds().width, body.getSize().x, body.getPosition().x, 0),
-        Functions::GetMiddle(text.getGlobalBounds().height, body.getSize().y, body.getPosition().y, text.getLocalBounds().top),
+        Functions::GetMiddle(text.getGlobalBounds().size.x, body.getSize().x, body.getPosition().x, 0),
+        Functions::GetMiddle(text.getGlobalBounds().size.y, body.getSize().y, body.getPosition().y, text.getLocalBounds().position.y),
     });
 }
 
@@ -53,8 +53,8 @@ void Button::setSize(sf::Vector2f size)
 {
     body.setSize(size);
     text.setPosition({
-        Functions::GetMiddle(text.getGlobalBounds().width, body.getSize().x, body.getPosition().x, 0),
-        Functions::GetMiddle(text.getGlobalBounds().height, body.getSize().y, body.getPosition().y, text.getGlobalBounds().top),
+        Functions::GetMiddle(text.getGlobalBounds().size.x, body.getSize().x, body.getPosition().x, 0),
+        Functions::GetMiddle(text.getGlobalBounds().size.y, body.getSize().y, body.getPosition().y, text.getGlobalBounds().position.y),
     });
 }
 

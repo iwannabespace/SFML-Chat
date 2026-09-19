@@ -1,8 +1,8 @@
 #include "../include/option.hpp"
 #include "../include/functions.hpp"
-#include <iostream>
 
 Option::Option(sf::Font& font)
+    : text(font)
 {
     text.setFont(font);
     container.setRadius(6);
@@ -14,14 +14,14 @@ Option::~Option()
 
 void Option::on_window_resize(const sf::RenderWindow& window)
 {
-    window;
+    (void)window;
 }
 
 void Option::on_hover(const sf::RenderWindow& window)
 {
     if (container.getGlobalBounds().contains(sf::Vector2f(sf::Mouse::getPosition(window))))
         container.setFillColor(hoverColor);
-    
+
     else
         container.setFillColor(fillColor);
 }
@@ -79,7 +79,7 @@ void Option::place()
 
     text.setPosition({
         container.getPosition().x + 10,
-        Functions::GetMiddle(textMaxHeight, container.getSize().y, container.getPosition().y, text.getLocalBounds().top),
+        Functions::GetMiddle(textMaxHeight, container.getSize().y, container.getPosition().y, text.getLocalBounds().position.y),
     });
 }
 
